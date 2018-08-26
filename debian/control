@@ -1,0 +1,15 @@
+Source: salt-formula-saleor
+Maintainer: Dominik Resl <info@resldominik.cz>
+Section: admin
+Priority: optional
+Build-Depends: debhelper (>= 9), python, python-yaml
+Standards-Version: 3.9.6
+Homepage: https://github.com/salt-formulas
+Vcs-Browser: https://github.com/salt-formulas/salt-formula-saleor
+Vcs-Git: https://github.com/salt-formulas/salt-formula-saleor.git
+
+Package: salt-formula-saleor
+Architecture: all
+Depends: ${misc:Depends}
+Description: saleor salt formula
+ Install and configure saleor.

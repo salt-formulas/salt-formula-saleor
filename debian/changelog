@@ -1,0 +1,5 @@
+salt-formula-saleor (2018.1) xenial; urgency=medium
+
+  * Initial release
+
+ -- Dominik Resl info@resldominik.cz  Sat, 25 Aug 2018 05:14:13 BST

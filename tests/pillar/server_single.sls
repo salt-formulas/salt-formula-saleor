@@ -1,0 +1,3 @@
+saleor:
+  server:
+    enabled: true
