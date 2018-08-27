@@ -1,7 +1,7 @@
 {%- if store.bind is defined and store.bind.port is defined %}
 {%- set store_bind_port = store.bind.port %}
 {%- else %}
-{%- set store_bind_port = 8000 + loop.index %}
+{%- set store_bind_port = 8000 %}
 {%- endif %}
 
 {%- set store_dir = '/srv/saleor/stores/' + store_name %}
@@ -96,7 +96,7 @@ saleor_{{ store_name }}_service_file:
 
 npm_{{ store_name }}_install:
   cmd.run:
-  - name: sudo npm update; sudo npm install @babel/core@7.0.0-beta.50; sudo npm install; sudo  npm run build-assets; sudo npm run build-emails
+  - name: sudo npm update; sudo npm install; sudo  npm run build-assets; sudo npm run build-emails
   - cwd: {{ store_dir }}/source
   - require:
     - file: saleor_{{ store_name }}_dirs
