@@ -44,7 +44,7 @@ pip-{{ store_name }}-upgrade2:
   - requirements: {{ store_dir }}/source/requirements.txt
   - bin_env: {{ store_dir }}/venv/bin/pip
 
-pip-gunicorn:
+pip-{{ store_name }}-gunicorn:
   pip.installed:
   - name: gunicorn
   - bin_env: {{ store_dir }}/venv/bin/pip
