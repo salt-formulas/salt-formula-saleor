@@ -70,29 +70,12 @@ DATABASES = {
 TIME_ZONE = '{{ store.get('time_zone', 'Europe/Prague') }}'
 LANGUAGE_CODE = 'en'
 LANGUAGES = [
-    ('bg', _('Bulgarian')),
-    ('cs', _('Czech')),
-    ('de', _('German')),
-    ('en', _('English')),
-    ('es', _('Spanish')),
-    ('fa-ir', _('Persian (Iran)')),
-    ('fr', _('French')),
-    ('hu', _('Hungarian')),
-    ('it', _('Italian')),
-    ('ja', _('Japanese')),
-    ('ko', _('Korean')),
-    ('nb', _('Norwegian')),
-    ('nl', _('Dutch')),
-    ('pl', _('Polish')),
-    ('pt-br', _('Portuguese (Brazil)')),
-    ('ro', _('Romanian')),
-    ('ru', _('Russian')),
-    ('sk', _('Slovak')),
-    ('tr', _('Turkish')),
-    ('uk', _('Ukrainian')),
-    ('vi', _('Vietnamese')),
-    ('zh-hans', _('Chinese')),
-    ('zh-tw', _('Chinese (Taiwan)'))]
+    {%- for lang in store.get('languages', 'en') %}
+    {%- if lang is defined %}
+    ('{{ lang|lower }}', '{{ lang|lower }}'),
+    {%- endif %}
+    {%- endfor %}
+]
 LOCALE_PATHS = [os.path.join(PROJECT_ROOT, 'locale')]
 USE_I18N = True
 USE_L10N = True
@@ -244,9 +227,17 @@ INSTALLED_APPS = [
     'django_celery_results',
     'impersonate',
     'phonenumber_field',
-    'captcha']
+    'captcha',
+    {%- for extra_app in store.get('extra_apps', []) %}
+    {%- if extra_app is defined %}
+    '{{ extra_app }}',
+    {%- endif %}
+    {%- endfor %}
+]
 
-if DEBUG:
+DEBUG_TOOLBAR = False
+
+if DEBUG_TOOLBAR:
     MIDDLEWARE.append(
         'debug_toolbar.middleware.DebugToolbarMiddleware')
     INSTALLED_APPS.append('debug_toolbar')
@@ -330,9 +321,7 @@ COUNTRIES_OVERRIDE = {
 
 OPENEXCHANGERATES_API_KEY = os.environ.get('OPENEXCHANGERATES_API_KEY')
 
-# VAT configuration
-# Enabling vat requires valid vatlayer access key.
-VATLAYER_ACCESS_KEY = os.environ.get('VATLAYER_ACCESS_KEY')
+
 
 ACCOUNT_ACTIVATION_DAYS = 3
 
@@ -351,7 +340,37 @@ PAYMENT_HOST = get_host
 PAYMENT_MODEL = 'order.Payment'
 
 PAYMENT_VARIANTS = {
-    'default': ('payments.dummy.DummyProvider', {})}
+
+{%- if store.paypal is defined %}
+    'paypal': ('payments.paypal.PaypalProvider', {
+        'client_id': '{{ store.paypal.client_id }}',
+        'secret': '{{ store.paypal.secret }}',
+        'endpoint': '{{ store.paypal.api_endpoint }}',
+        'capture': {{ store.paypal.capture }} }),
+{%- endif %}
+
+{%- if store.payment_choices is not defined %}
+    'dummy': ('payments.dummy.DummyProvider', {})
+{%- endif %}
+
+}
+
+{%- if store.vatlayer is defined %}
+# VAT configuration
+# Enabling vat requires valid vatlayer access key.
+VATLAYER_ACCESS_KEY = '{{ store.vatlayer.access_key }}'
+VATLAYER_API = '{{ store.vatlayer.api_endpoint }}'
+{%- endif %}
+
+CHECKOUT_PAYMENT_CHOICES = [
+{%- if store.payment_choices is defined %}
+{%- for payment_choice in store.get('payment_choices', []) %}
+    ('{{ payment_choice.engine }}', '{{ payment_choice.display_name }}'),
+{%- endfor %}
+{%- else %}
+    ('default', 'Dummy provider'),
+{%- endif%}
+]
 
 SESSION_SERIALIZER = 'django.contrib.sessions.serializers.JSONSerializer'
 
@@ -359,9 +378,6 @@ SESSION_SERIALIZER = 'django.contrib.sessions.serializers.JSONSerializer'
 # default django.contrib.sessions.backends.db instead
 if not CACHES['default']['BACKEND'].endswith('LocMemCache'):
     SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
-
-CHECKOUT_PAYMENT_CHOICES = [
-    ('default', 'Dummy provider')]
 
 MESSAGE_TAGS = {
     messages.ERROR: 'danger'}

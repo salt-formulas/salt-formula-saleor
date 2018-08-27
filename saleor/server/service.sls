@@ -18,6 +18,7 @@ saleor_dirs:
     - {{ server.dir.base }}/stores
     - {{ server.dir.scripts }}
     - {{ server.dir.logs }}
+    - /run/saleor
   - user: saleor
   - group: saleor
   - mode: 755
@@ -38,18 +39,21 @@ saleor_common_source:
 
 /srv/saleor/venv:
   virtualenv.manage:
-  - requirements: /srv/saleor/source/requirements.txt
   - python: python3
   - require:
     - pkg: saleor_packages
     - git: saleor_common_source
 
-saleor_npm_common_install:
-  cmd.run:
-  - name: npm install; npm run build-assets; npm run build-emails
-  - cwd: /srv/saleor/source
-  - require:
-    - git: saleor_common_source
+pip-upgrade1:
+  pip.installed:
+  - name: pip==10
+  - bin_env: /srv/saleor/venv/bin/pip
+
+pip-upgrade2:
+  pip.installed:
+  - requirements: /srv/saleor/source/requirements.txt
+  - bin_env: /srv/saleor/venv/bin/pip
+
 
 {%- endif %}
 
