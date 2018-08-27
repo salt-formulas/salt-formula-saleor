@@ -94,6 +94,13 @@ saleor_{{ store_name }}_service_file:
   - require:
     - pip: pip-gunicorn
 
+npm_{{ store_name }}_install:
+  cmd.run:
+  - name: sudo npm update; sudo npm install @babel/core@7.0.0-beta.50; sudo npm install; sudo  npm run build-assets; sudo npm run build-emails
+  - cwd: {{ store_dir }}/source
+  - require:
+    - file: saleor_{{ store_name }}_dirs
+
 saleor_{{ store_name }}_migrate_database:
   cmd.run:
   - name: source {{ store_dir }}/venv/bin/activate; {{ store_dir }}/venv/bin/python manage.py migrate

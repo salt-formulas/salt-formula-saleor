@@ -54,6 +54,12 @@ pip-upgrade2:
   - requirements: /srv/saleor/source/requirements.txt
   - bin_env: /srv/saleor/venv/bin/pip
 
+saleor_npm_common_install:
+  cmd.run:
+  - name: sudo npm update; sudo npm install @babel/core@7.0.0-beta.50; sudo npm install; sudo  npm run build-assets; sudo npm run build-emails
+  - cwd: /srv/saleor/source
+  - require:
+    - git: saleor_common_source
 
 {%- endif %}
 
