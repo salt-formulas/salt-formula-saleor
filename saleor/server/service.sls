@@ -56,7 +56,7 @@ pip-upgrade2:
 
 saleor_npm_common_install:
   cmd.run:
-  - name: sudo npm update; sudo npm install; sudo  npm run build-assets; sudo npm run build-emails
+  - name: sudo npm update; sudo npm i npm@latest -g; sudo npm install; sudo npm install node-sass; sudo npm run build-assets; sudo npm run build-emails
   - cwd: /srv/saleor/source
   - require:
     - git: saleor_common_source
