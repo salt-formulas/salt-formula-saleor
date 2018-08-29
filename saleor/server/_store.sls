@@ -92,11 +92,11 @@ saleor_{{ store_name }}_service_file:
   - user: root
   - mode: 644
   - require:
-    - pip: pip-gunicorn
+    - pip: pip-{{ store_name }}-gunicorn
 
 npm_{{ store_name }}_install:
   cmd.run:
-  - name: sudo npm update; sudo npm install; sudo  npm run build-assets; sudo npm run build-emails
+  - name: sudo npm update; sudo npm i npm@latest -g; sudo npm install; sudo npm install node-sass; sudo npm run build-assets; sudo npm run build-emails
   - cwd: {{ store_dir }}/source
   - require:
     - file: saleor_{{ store_name }}_dirs
