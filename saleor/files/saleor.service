@@ -1,0 +1,21 @@
+{%- from "saleor/map.jinja" import server with context -%}
+{%- set store = salt['pillar.get']('saleor:server:store:'+store_name) %}
+
+[Unit]
+Description=saleor gunicorn daemon
+After=network.target
+
+[Service]
+PIDFile=/run/saleor/saleor-{{ store_name }}-pid
+User=saleor
+Group=saleor
+RuntimeDirectory=gunicorn
+WorkingDirectory={{ server.dir.base }}/stores/{{ store_name }}/site
+ExecStart={{ server.dir.base }}/stores/{{ store_name }}/venv/bin/gunicorn --pid /run/saleor/saleor-{{ store_name }}-pid   \
+          --bind localhost:{{ port }} wsgi
+ExecReload=/bin/kill -s HUP $MAINPID
+ExecStop=/bin/kill -s TERM $MAINPID
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
