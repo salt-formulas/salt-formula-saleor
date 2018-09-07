@@ -11,7 +11,11 @@ User=saleor
 Group=saleor
 RuntimeDirectory=gunicorn
 WorkingDirectory={{ server.dir.base }}/stores/{{ store_name }}/site
+{%- if store.saleor is defined %}
 ExecStart={{ server.dir.base }}/stores/{{ store_name }}/venv/bin/gunicorn --pid /run/saleor/saleor-{{ store_name }}-pid   \
+{%- else %}
+ExecStart={{ server.dir.base }}/venv/bin/gunicorn --pid /run/saleor/saleor-{{ store_name }}-pid   \
+{%- endif %}
           --bind localhost:{{ port }} wsgi
 ExecReload=/bin/kill -s HUP $MAINPID
 ExecStop=/bin/kill -s TERM $MAINPID

@@ -44,12 +44,12 @@ pip-{{ store_name }}-upgrade2:
   - requirements: {{ store_dir }}/source/requirements.txt
   - bin_env: {{ store_dir }}/venv/bin/pip
 
+{%- endif %}
+
 pip-{{ store_name }}-gunicorn:
   pip.installed:
   - name: gunicorn
-  - bin_env: {{ store_dir }}/venv/bin/pip
-
-{%- endif %}
+  - bin_env: /srv/saleor/venv/bin/pip
 
 {{ store_dir }}/site/settings.py:
   file.managed:
@@ -96,7 +96,7 @@ saleor_{{ store_name }}_service_file:
 
 npm_{{ store_name }}_install:
   cmd.run:
-  - name: sudo npm update; sudo npm i npm@latest -g; sudo npm install; sudo npm install node-sass; sudo npm run build-assets; sudo npm run build-emails
+  - name: sudo npm update; sudo npm install npm@latest -g; sudo npm install node-sass; sudo npm install; sudo npm audit fix; sudo npm run build-assets; sudo npm run build-emails
   - cwd: {{ store_dir }}/source
   - require:
     - file: saleor_{{ store_name }}_dirs
