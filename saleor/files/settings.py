@@ -114,9 +114,9 @@ EMAIL_BACKEND = '{{ store.email.backend }}'
 EMAIL_HOST = '{{ store.email.host_url }}'
 EMAIL_HOST_USER = '{{ store.email.host.user }}'
 EMAIL_HOST_PASSWORD = '{{ store.email.host.password }}'
-EMAIL_PORT = '{{ store.email.port }}'
-EMAIL_USE_TLS = '{{ store.email.use_tls }}'
-EMAIL_USE_SSL = '{{ store.email.use_ssl }}'
+EMAIL_PORT = {{ store.email.port }}
+EMAIL_USE_TLS = {{ store.email.use_tls }}
+EMAIL_USE_SSL = {{ store.email.use_ssl }}
 {%- else %}
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.seznam.cz'
