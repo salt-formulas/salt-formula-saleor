@@ -14,7 +14,7 @@
 {% include "saleor/server/_store.sls" %}
 {%- endfor %}
 
-{% else %}
+{%- else %}
 
 {%- for store_name, store in server.get('store', {}).iteritems() %}
 {% include "saleor/server/_store.sls" %}

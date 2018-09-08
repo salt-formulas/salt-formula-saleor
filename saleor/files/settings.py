@@ -26,7 +26,7 @@ def get_bool_from_env(name, default_value):
     return default_value
 
 
-DEBUG = get_bool_from_env('DEBUG', True)
+DEBUG = {{ store.get('debug', True) }}
 
 SITE_ID = 1
 
@@ -41,12 +41,15 @@ ADMINS = (
 )
 MANAGERS = ADMINS
 
-INTERNAL_IPS = get_list(os.environ.get('INTERNAL_IPS', '127.0.0.1'))
+INTERNAL_IPS = get_list('{{ store.get('internal_ips', '127.0.0.1') }}')
 
 # Some cloud providers like Heroku export REDIS_URL variable instead of CACHE_URL
-REDIS_URL = os.environ.get('REDIS_URL')
+{%- if store.redis is defined %}
+REDIS_URL = '{{ store.redis.url }}'
 if REDIS_URL:
     CACHE_URL = os.environ.setdefault('CACHE_URL', REDIS_URL)
+{%- endif %}
+
 CACHES = {'default': django_cache_url.config()}
 
 DATABASES = {
@@ -68,7 +71,7 @@ DATABASES = {
 }
 
 TIME_ZONE = '{{ store.get('time_zone', 'Europe/Prague') }}'
-LANGUAGE_CODE = 'en'
+LANGUAGE_CODE = '{{ store.get('lang_code', 'en') }}'
 LANGUAGES = [
     {%- for lang in store.get('languages', 'en') %}
     {%- if lang is defined %}
@@ -83,30 +86,59 @@ USE_TZ = True
 
 FORM_RENDERER = 'django.forms.renderers.TemplatesSetting'
 
-EMAIL_URL = os.environ.get('EMAIL_URL')
-SENDGRID_USERNAME = os.environ.get('SENDGRID_USERNAME')
-SENDGRID_PASSWORD = os.environ.get('SENDGRID_PASSWORD')
-if not EMAIL_URL and SENDGRID_USERNAME and SENDGRID_PASSWORD:
+{%- if store.sendgrid is defined %}
+SENDGRID_USERNAME = '{{ store.sendgrid.username }}'
+SENDGRID_PASSWORD = '{{ store.sendgrid.password }}'
+if SENDGRID_USERNAME and SENDGRID_PASSWORD:
     EMAIL_URL = 'smtp://%s:%s@smtp.sendgrid.net:587/?tls=True' % (
         SENDGRID_USERNAME, SENDGRID_PASSWORD)
-email_config = dj_email_url.parse(EMAIL_URL or 'console://')
+    email_config = dj_email_url.parse(EMAIL_URL or 'console://')
 
-EMAIL_FILE_PATH = email_config['EMAIL_FILE_PATH']
-EMAIL_HOST_USER = email_config['EMAIL_HOST_USER']
-EMAIL_HOST_PASSWORD = email_config['EMAIL_HOST_PASSWORD']
-EMAIL_HOST = email_config['EMAIL_HOST']
-EMAIL_PORT = email_config['EMAIL_PORT']
-EMAIL_BACKEND = email_config['EMAIL_BACKEND']
-EMAIL_USE_TLS = email_config['EMAIL_USE_TLS']
-EMAIL_USE_SSL = email_config['EMAIL_USE_SSL']
+    EMAIL_FILE_PATH = email_config['EMAIL_FILE_PATH']
+    EMAIL_BACKEND = email_config['EMAIL_BACKEND']
+    EMAIL_HOST = email_config['EMAIL_HOST']
+    EMAIL_HOST_USER = email_config['EMAIL_HOST_USER']
+    EMAIL_HOST_PASSWORD = email_config['EMAIL_HOST_PASSWORD']
+    EMAIL_PORT = email_config['EMAIL_PORT']
+    EMAIL_USE_TLS = email_config['EMAIL_USE_TLS']
+    EMAIL_USE_SSL = email_config['EMAIL_USE_SSL']
 
-ENABLE_SSL = get_bool_from_env('ENABLE_SSL', False)
+{%- else %}
+
+{%- if store.email is defined and store.email.url is defined %}
+EMAIL_URL = '{{ store.email.url }}'
+{%- endif %}
+# default is for email profi by Seznam.cz
+{%- if store.email is defined %}
+EMAIL_BACKEND = '{{ store.email.backend }}'
+EMAIL_HOST = '{{ store.email.host_url }}'
+EMAIL_HOST_USER = '{{ store.email.host.user }}'
+EMAIL_HOST_PASSWORD = '{{ store.email.host.password }}'
+EMAIL_PORT = {{ store.email.port }}
+EMAIL_USE_TLS = {{ store.email.use_tls }}
+EMAIL_USE_SSL = {{ store.email.use_ssl }}
+{%- else %}
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.seznam.cz'
+EMAIL_PORT = 465
+EMAIL_USE_TLS = False
+EMAIL_USE_SSL = True
+{%- endif %}
+
+{%- endif %}
+
+ENABLE_SSL = {{ store.get('enable_ssl', False) }}
 
 if ENABLE_SSL:
     SECURE_SSL_REDIRECT = not DEBUG
 
+{%- if store.from_email is defined %}
+DEFAULT_FROM_EMAIL = '{{ store.from_email.default }}'
+ORDER_FROM_EMAIL = '{{ store.from_email.order }}'
+{%- else %}
 DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL')
 ORDER_FROM_EMAIL = os.getenv('ORDER_FROM_EMAIL', DEFAULT_FROM_EMAIL)
+{%- endif %}
 
 MEDIA_ROOT = os.path.join(PROJECT_ROOT, 'media')
 MEDIA_URL = '/media/'
@@ -156,7 +188,7 @@ TEMPLATES = [{
         'string_if_invalid': '<< MISSING VARIABLE "%s" >>' if DEBUG else ''}}]
 
 # Make this unique, and don't share it with anybody.
-SECRET_KEY = '{{ store.secret_key }}'
+SECRET_KEY = '{{ store.get('secret_key', '87941asd897897asd987') }}'
 
 MIDDLEWARE = [
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -263,7 +295,7 @@ if DEBUG_TOOLBAR:
     DEBUG_TOOLBAR_CONFIG = {
         'RESULTS_STORE_SIZE': 100}
 
-ENABLE_SILK = get_bool_from_env('ENABLE_SILK', False)
+ENABLE_SILK = {{ store.get('silk.enabled', False) }}
 if ENABLE_SILK:
     MIDDLEWARE.insert(0, 'silk.middleware.SilkyMiddleware')
     INSTALLED_APPS.append('silk')
@@ -320,21 +352,25 @@ COUNTRIES_OVERRIDE = {
         'Name of political and economical union of european countries',
         'European Union')}
 
+{%- if store.openexchangerates is defined %}
+OPENEXCHANGERATES_API_KEY = '{{ store.openexchangerates.api_key }}'
+{%- else %}
 OPENEXCHANGERATES_API_KEY = os.environ.get('OPENEXCHANGERATES_API_KEY')
+{%- endif %}
 
-
-
-ACCOUNT_ACTIVATION_DAYS = 3
+ACCOUNT_ACTIVATION_DAYS = {{ store.get('account_activation_days', 3) }}
 
 LOGIN_REDIRECT_URL = 'home'
 
+{%- if store.google is defined %}
+GOOGLE_ANALYTICS_TRACKING_ID = '{{ store.google.analytics_tracking_id }}'
+{%- else %}
 GOOGLE_ANALYTICS_TRACKING_ID = os.environ.get('GOOGLE_ANALYTICS_TRACKING_ID')
-
+{%- endif %}
 
 def get_host():
     from django.contrib.sites.models import Site
     return Site.objects.get_current().domain
-
 
 PAYMENT_HOST = get_host
 
@@ -383,12 +419,12 @@ if not CACHES['default']['BACKEND'].endswith('LocMemCache'):
 MESSAGE_TAGS = {
     messages.ERROR: 'danger'}
 
-LOW_STOCK_THRESHOLD = 10
-MAX_CART_LINE_QUANTITY = int(os.environ.get('MAX_CART_LINE_QUANTITY', 50))
+LOW_STOCK_THRESHOLD = {{ store.get('low_stock_threshold', 10) }}
+MAX_CART_LINE_QUANTITY = int({{ store.get('max_cart_line_quantity', 50) }})
 
-PAGINATE_BY = 16
-DASHBOARD_PAGINATE_BY = 30
-DASHBOARD_SEARCH_LIMIT = 5
+PAGINATE_BY = {{ store.get('paginate_by', 16) }}
+DASHBOARD_PAGINATE_BY = {{ store.get('dashboard_paginate_by', 30) }}
+DASHBOARD_SEARCH_LIMIT = {{ store.get('dashboard_search_limit', 5) }}
 
 bootstrap4 = {
     'set_placeholder': False,
@@ -399,11 +435,27 @@ bootstrap4 = {
 
 TEST_RUNNER = ''
 
-ALLOWED_HOSTS = get_list(
-    os.environ.get('ALLOWED_HOSTS', '*'))
+ALLOWED_HOSTS = get_list('{{ store.get('allowed_hosts', '*') }}')
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
+{%- if store.aws is defined %}
+# Amazon S3 configuration
+AWS_ACCESS_KEY_ID = '{{ store.aws.access_key_id }}'
+AWS_LOCATION = '{{ store.aws.location }}'
+AWS_MEDIA_BUCKET_NAME = '{{ store.aws.media_bucket_name }}'
+AWS_MEDIA_CUSTOM_DOMAIN = '{{ store.aws.media_custom_domain }}'
+AWS_QUERYSTRING_AUTH = {{ store.aws.querystring_auth }}
+AWS_S3_CUSTOM_DOMAIN = '{{ store.aws.static_custom_domain }}'
+AWS_SECRET_ACCESS_KEY = '{{ store.aws.secret_access_key }}'
+AWS_STORAGE_BUCKET_NAME = '{{ store.aws.storage_bucket_name }}'
+if AWS_STORAGE_BUCKET_NAME:
+    STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+
+if AWS_MEDIA_BUCKET_NAME:
+    DEFAULT_FILE_STORAGE = 'saleor.core.storages.S3MediaStorage'
+    THUMBNAIL_DEFAULT_STORAGE = DEFAULT_FILE_STORAGE
+{%- else %}
 # Amazon S3 configuration
 AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
 AWS_LOCATION = os.environ.get('AWS_LOCATION', '')
@@ -420,6 +472,7 @@ if AWS_STORAGE_BUCKET_NAME:
 if AWS_MEDIA_BUCKET_NAME:
     DEFAULT_FILE_STORAGE = 'saleor.core.storages.S3MediaStorage'
     THUMBNAIL_DEFAULT_STORAGE = DEFAULT_FILE_STORAGE
+{%- endif %}
 
 MESSAGE_STORAGE = 'django.contrib.messages.storage.session.SessionStorage'
 
@@ -434,8 +487,7 @@ VERSATILEIMAGEFIELD_RENDITION_KEY_SETS = {
 
 VERSATILEIMAGEFIELD_SETTINGS = {
     # Images should be pre-generated on Production environment
-    'create_images_on_demand': get_bool_from_env(
-        'CREATE_IMAGES_ON_DEMAND', DEBUG),
+    'create_images_on_demand': DEBUG,
 }
 
 PLACEHOLDER_IMAGES = {
@@ -455,15 +507,30 @@ WEBPACK_LOADER = {
         'POLL_INTERVAL': 0.1,
         'IGNORE': [
             r'.+\.hot-update\.js',
-            r'.+\.map']}}
+            r'.+\.map']
+    }
+}
 
 
-LOGOUT_ON_PASSWORD_CHANGE = False
+LOGOUT_ON_PASSWORD_CHANGE = {{ store.get('logout_on_password_change', False) }}
 
 # SEARCH CONFIGURATION
-DB_SEARCH_ENABLED = True
+DB_SEARCH_ENABLED = {{ store.get('db_search_enabled', True) }}
 
 # support deployment-dependant elastic enviroment variable
+{%- if store.elasticsearch is defined or store.searchbox is defined or store.bonsai is defined %}
+ES_URL = ('{{ store.elasticsearch.url }}' or
+          '{{ store.searchbox.url }}' or '{{ store.bonsai.url }}')
+
+ENABLE_SEARCH = bool(ES_URL) # global search disabling
+
+if ES_URL:
+    SEARCH_BACKEND = 'saleor.search.backends.elasticsearch'
+    INSTALLED_APPS.append('django_elasticsearch_dsl')
+    ELASTICSEARCH_DSL = {
+        'default': {
+            'hosts': ES_URL}}
+{%- else %}
 ES_URL = (os.environ.get('ELASTICSEARCH_URL') or
           os.environ.get('SEARCHBOX_URL') or os.environ.get('BONSAI_URL'))
 
@@ -477,6 +544,9 @@ if ES_URL:
     ELASTICSEARCH_DSL = {
         'default': {
             'hosts': ES_URL}}
+{%- endif %}
+
+SEARCH_BACKEND = 'saleor.search.backends.postgresql'
 
 AUTHENTICATION_BACKENDS = [
     'saleor.account.backends.facebook.CustomFacebookOAuth2',
@@ -500,10 +570,19 @@ SOCIAL_AUTH_USER_MODEL = AUTH_USER_MODEL
 SOCIAL_AUTH_FACEBOOK_SCOPE = ['email']
 SOCIAL_AUTH_FACEBOOK_PROFILE_EXTRA_PARAMS = {
     'fields': 'id, email'}
+
 # As per March 2018, Facebook requires all traffic to go through HTTPS only
 SOCIAL_AUTH_REDIRECT_IS_HTTPS = True
 
 # CELERY SETTINGS
+{%- if store.celery is defined %}
+CELERY_BROKER_URL = {{ store.get('celery.broker_url', 'celery.cloudamqp_url') }} or ''
+CELERY_TASK_ALWAYS_EAGER = False if CELERY_BROKER_URL else True
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_RESULT_BACKEND = 'django-db'
+{%- else %}
 CELERY_BROKER_URL = os.environ.get(
     'CELERY_BROKER_URL', os.environ.get('CLOUDAMQP_URL')) or ''
 CELERY_TASK_ALWAYS_EAGER = False if CELERY_BROKER_URL else True
@@ -511,6 +590,7 @@ CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_RESULT_BACKEND = 'django-db'
+{%- endif %}
 
 # Impersonate module settings
 IMPERSONATE = {
@@ -554,17 +634,28 @@ DEFAULT_MENUS = {
 NOCAPTCHA = True
 
 # Set Google's reCaptcha keys
-RECAPTCHA_PUBLIC_KEY = os.environ.get('RECAPTCHA_PUBLIC_KEY')
-RECAPTCHA_PRIVATE_KEY = os.environ.get('RECAPTCHA_PRIVATE_KEY')
-
+{%- if store.recaptcha is defined %}
+RECAPTCHA_PUBLIC_KEY = '{{ store.recaptcha.public_key }}'
+RECAPTCHA_PRIVATE_KEY = '{{ store.recaptcha.private_key }}'
+{%- else %}
+RECAPTCHA_PUBLIC_KEY = ''
+RECAPTCHA_PUBLIC_KEY = ''
+{%- endif %}
 
 #  Sentry
-SENTRY_DSN = os.environ.get('SENTRY_DSN')
+{%- if sentry is defined %}
+SENTRY_DSN = '{{ store.sentry.dsn }}'
 if SENTRY_DSN:
     INSTALLED_APPS.append('raven.contrib.django.raven_compat')
     RAVEN_CONFIG = {
         'dsn': SENTRY_DSN}
-
+{%- else %}
+SENTRY_DSN = os.environ.get('SENTRY_DSN')
+if SENTRY_DSN:
+    INSTALLED_APPS.append('raven.contrib.django.raven_compat')
+    RAVEN_CONFIG = {
+        'dsn': SENTRY_DSN,}
+{%- endif %}
 
 SERIALIZATION_MODULES = {
     'json': 'saleor.core.utils.json_serializer'}
