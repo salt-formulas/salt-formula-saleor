@@ -74,10 +74,19 @@ Simple site
               url: ${_param:saleor_search_searchbox}
             bonsai:
               url: ${_param:saleor_search_bonsai}
+            plugins:
+              fullcalendar:
+                source:
+                  engine: git
+                  address: 'git+https://github.com/dresl/django-fullcalendar.git#egg=django-fullcalendar'
+              django-payments-cod:
+                source:
+                  engine: pip
             extra_apps:
             - watermarker
             silk:
               enabled: False
+            cod: {}
             redis:
               url: ${_param:saleor_redis_url}
             openexchangerates:
