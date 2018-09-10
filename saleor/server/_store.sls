@@ -44,53 +44,33 @@ pip-{{ store_name }}-upgrade2:
   - requirements: {{ store_dir }}/source/requirements.txt
   - bin_env: {{ store_dir }}/venv/bin/pip
 
-{% for plugin_name, plugin in store.get('plugins', {}).iteritems() %}
-{% if not plugin.get('site', false) %}
-{{ plugin_name }}_{{ store_name }}_req:
-  pip.installed:
-  {%- if 'source' in plugin and plugin.source.get('engine', 'git') == 'git' %}
-  - editable: {{ plugin.source.address }}
-  {%- elif 'source' in plugin and plugin.source.engine == 'pip' %}
-  - name: {{ plugin_name }} {%- if plugin.version is defined %}=={{ plugin.version }}{% endif %}
-    {%- if plugin.source.address is defined %}
-  - index_url: {{ plugin.source.get('address', 'http://pypi.python.org') }}
-  - trusted_host: {{ index_url.replace('https://', '').replace('/simple/', '') }}
-    {%- endif %}
-    {%- if not plugin.version is defined %}
-  - pre_releases: True
-    {%- endif %}
-  {%- endif %}
-  - bin_env: {{ store_dir }}/venv/bin/pip
-  - exists_action: w
-  - process_dependency_links: True
-{% endif %}
-{% endfor %}
-
-{% else %}
-
-{% for plugin_name, plugin in store.get('plugins', {}).iteritems() %}
-{% if not plugin.get('site', false) %}
-{{ plugin_name }}_{{ store_name }}_req:
-  pip.installed:
-  {%- if 'source' in plugin and plugin.source.get('engine', 'git') == 'git' %}
-  - editable: {{ plugin.source.address }}
-  {%- elif 'source' in plugin and plugin.source.engine == 'pip' %}
-  - name: {{ plugin_name }} {%- if plugin.version is defined %}=={{ plugin.version }}{% endif %}
-    {%- if plugin.source.address is defined %}
-  - index_url: {{ plugin.source.get('address', 'http://pypi.python.org') }}
-  - trusted_host: {{ index_url.replace('https://', '').replace('/simple/', '') }}
-    {%- endif %}
-    {%- if not plugin.version is defined %}
-  - pre_releases: True
-    {%- endif %}
-  {%- endif %}
-  - bin_env: /srv/saleor/venv/bin/pip
-  - exists_action: w
-  - process_dependency_links: True
-{% endif %}
-{% endfor %}
-
 {%- endif %}
+
+{% for plugin_name, plugin in store.get('plugins', {}).iteritems() %}
+{% if not plugin.get('site', false) %}
+{{ plugin_name }}_{{ store_name }}_req:
+  pip.installed:
+  {%- if 'source' in plugin and plugin.source.get('engine', 'git') == 'git' %}
+  - editable: {{ plugin.source.address }}
+  {%- elif 'source' in plugin and plugin.source.engine == 'pip' %}
+  - name: {{ plugin_name }} {%- if plugin.version is defined %}=={{ plugin.version }}{% endif %}
+    {%- if plugin.source.address is defined %}
+  - index_url: {{ plugin.source.get('address', 'http://pypi.python.org') }}
+  - trusted_host: {{ index_url.replace('https://', '').replace('/simple/', '') }}
+    {%- endif %}
+    {%- if not plugin.version is defined %}
+  - pre_releases: True
+    {%- endif %}
+  {%- endif %}
+  {%- if store.saleor is defined %}
+  - bin_env: /srv/saleor/venv/bin/pip
+  {%- else %}
+  - bin_env: {{ store_dir }}/venv/bin/pip
+  {%- endif %}
+  - exists_action: w
+  - process_dependency_links: True
+{% endif %}
+{% endfor %}
 
 pip-{{ store_name }}-gunicorn:
   pip.installed:
