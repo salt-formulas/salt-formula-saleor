@@ -387,7 +387,7 @@ PAYMENT_VARIANTS = {
 {%- endif %}
 
 {%- if store.cod is defined %}
-    'default': ('django_payments_cod.CODProvider', {}),
+    'cod': ('django_payments_cod.CODProvider', {}),
 {%- endif %}
 
 {%- if store.payment_choices is not defined %}

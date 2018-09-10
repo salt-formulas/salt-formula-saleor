@@ -63,9 +63,9 @@ pip-{{ store_name }}-upgrade2:
     {%- endif %}
   {%- endif %}
   {%- if store.saleor is defined %}
-  - bin_env: /srv/saleor/venv/bin/pip
-  {%- else %}
   - bin_env: {{ store_dir }}/venv/bin/pip
+  {%- else %}
+  - bin_env: /srv/saleor/venv/bin/pip
   {%- endif %}
   - exists_action: w
   - process_dependency_links: True
