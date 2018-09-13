@@ -17,6 +17,26 @@ saleor_{{ store_name }}_dirs:
   - require:
     - user: saleor
 
+{{ store_dir }}/site/settings.py:
+  file.managed:
+  - source: salt://saleor/files/settings.py
+  - template: jinja
+  - mode: 644
+  - defaults:
+    store_name: "{{ store_name }}"
+  - require:
+    - file: saleor_{{ store_name }}_dirs
+
+{{ store_dir }}/site/manage.py:
+  file.managed:
+  - source: salt://saleor/files/manage.py
+  - template: jinja
+  - mode: 644
+  - defaults:
+    store_name: "{{ store_name }}"
+  - require:
+    - file: saleor_{{ store_name }}_dirs
+
 {%- if store.saleor is defined %}
 
 saleor_{{ store_name }}_source:
@@ -45,6 +65,30 @@ pip-{{ store_name }}-upgrade2:
   - bin_env: {{ store_dir }}/venv/bin/pip
 
 {%- endif %}
+
+npm_{{ store_name }}_install:
+  cmd.run:
+  - name: sudo npm install npm@latest; sudo npm install node-sass; sudo npm install; sudo npm audit fix; sudo npm install; sudo npm run build-assets; sudo npm run build-emails
+  {%- if store.saleor is defined %}
+  - cwd: {{ store_dir }}/source
+  {%- else %}
+  - cwd: /srv/saleor/source
+  {%- endif %}
+  - require:
+    - file: saleor_{{ store_name }}_dirs
+
+saleor_{{ store_name }}_migrate_database:
+  cmd.run:
+  {%- if store.saleor is defined %}
+  - name: source {{ store_dir }}/venv/bin/activate; {{ store_dir }}/venv/bin/python manage.py migrate
+  - cwd: {{ store_dir }}/site
+  {%- else %}
+  - name: source /srv/saleor/venv/bin/activate; /srv/saleor/venv/bin/python manage.py migrate
+  - cwd: {{ store_dir }}/site
+  {%- endif %}
+  - require:
+    - file: saleor_{{ store_name }}_dirs
+    - file: {{ store_dir }}/site/settings.py
 
 {% for plugin_name, plugin in store.get('plugins', {}).iteritems() %}
 {% if not plugin.get('site', false) %}
@@ -77,26 +121,6 @@ pip-{{ store_name }}-gunicorn:
   - name: gunicorn
   - bin_env: /srv/saleor/venv/bin/pip
 
-{{ store_dir }}/site/settings.py:
-  file.managed:
-  - source: salt://saleor/files/settings.py
-  - template: jinja
-  - mode: 644
-  - defaults:
-    store_name: "{{ store_name }}"
-  - require:
-    - file: saleor_{{ store_name }}_dirs
-
-{{ store_dir }}/site/manage.py:
-  file.managed:
-  - source: salt://saleor/files/manage.py
-  - template: jinja
-  - mode: 644
-  - defaults:
-    store_name: "{{ store_name }}"
-  - require:
-    - file: saleor_{{ store_name }}_dirs
-
 {{ store_dir }}/site/wsgi.py:
   file.managed:
   - source: salt://saleor/files/wsgi.py
@@ -120,17 +144,3 @@ saleor_{{ store_name }}_service_file:
   - require:
     - pip: pip-{{ store_name }}-gunicorn
 
-npm_{{ store_name }}_install:
-  cmd.run:
-  - name: sudo npm update; sudo npm install npm@latest -g; sudo npm install node-sass; sudo npm install; sudo npm audit fix; sudo npm run build-assets; sudo npm run build-emails
-  - cwd: {{ store_dir }}/source
-  - require:
-    - file: saleor_{{ store_name }}_dirs
-
-saleor_{{ store_name }}_migrate_database:
-  cmd.run:
-  - name: source {{ store_dir }}/venv/bin/activate; {{ store_dir }}/venv/bin/python manage.py migrate
-  - cwd: {{ store_dir }}/site
-  - require:
-    - file: saleor_{{ store_name }}_dirs
-    - file: {{ store_dir }}/site/settings.py

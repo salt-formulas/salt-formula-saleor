@@ -30,7 +30,11 @@ DEBUG = {{ store.get('debug', True) }}
 
 SITE_ID = 1
 
+{%- if store.saleor is defined %}
 PROJECT_ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), '..', 'source'))
+{%- else %}
+PROJECT_ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'source'))
+{%- endif %}
 
 ROOT_URLCONF = 'saleor.urls'
 
